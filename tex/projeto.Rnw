@@ -1,0 +1,145 @@
+%\VignetteEngine{knitr::knitr}
+\documentclass[twoside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{amsmath, amssymb}
+\usepackage{bm}
+
+<<style-knitr, eval=TRUE, echo=FALSE, results='asis', dev='tikz'>>=
+BiocStyle::latex()
+@
+
+% These are useful commands to format significant values in tables
+% ns, gs, hs stands for non, general and highly significant, respectively.
+% The alignment is the tricky part
+\newcommand{\ns}[1]{\quad#1}
+\newcommand{\gs}[1]{\bm{\quad#1}}
+\newcommand{\hs}{\bm{{<}0.01}}
+
+\begin{document}
+
+\bioctitle[Nice tables]{Producing nice tables}
+\author{Daniel Silvestre\footnote{daniel.silvestre@hc.fm.usp.br}}
+\maketitle
+
+\abstract{A tutorial on how to produce some decent tables within R to embed 
+into 
+\LaTeX documents made with \CRANpkg{knitr} and similar.}
+\newpage
+\section{Setup}
+<<Packages>>=
+#Load libraries
+library(XLConnect)
+library(reshape2)
+library(tables)
+library(xtable)
+library(nortest)
+@
+
+<<'Parameters and related stuff'>>=
+booktabs()
+@
+
+A brief explanation about \CRANpkg{xtable} vs. \CRANpkg{tables} is important. 
+The first is able to deal with most basic R objects like models, summaries, 
+etc. and it has a lot of builtin options able to control layout, captions and 
+similar. But, you must contruct the object before feed it to the main function. 
+So, it's not so flexible. The later is quite flexible, but it's unaware of R 
+objects and the returned object should be post processed to generate the right 
+output, usually using functions from \CRANpkg{Hmisc}. So, if you intend to 
+master tables, these two packages are essential. 
+
+\section{Data}
+
+So, let's do it!
+<<XLConnect>>=
+# Load Excel file
+wb <- loadWorkbook('../data/Citotoxicidade - curado.xls')
+
+# Read sheet to data frame
+assay1 <- readWorksheet(wb, sheet='Ensaio1', check.names=FALSE)
+
+# Note that readWorksheet DON'T convert strings to factors
+# Most table functions will require factors to operate properly 
+assay1$Time <- factor(assay1$Time)
+@
+
+\section{First example, simple summary}
+
+Let's construct a simple table with mean and standard deviation as summary 
+statistics and a normality test (Anderson-Darling at this particular). It's 
+easier to manipulate summary statistics using \textit{sprintf} and similar 
+functions. It's a good idea to use such functions to return the adequate 
+strings with the correct \LaTeX tags. In this example, I've created a function 
+that spits strings based on significance values. In the preamble I've defined 
+some \LaTeX commands to avoid extra typing. It seems a bit over the top at 
+first sight. But, after one or two tables, you will probably thank me. 
+
+<<'Auxiliary formating functions'>>=
+# And quite obvious how to control precision, spacing, etc.
+msd <- function(x) sprintf('%2.3f (%2.3f)', mean(x, na.rm=TRUE), sd(x, 
+na.rm=TRUE))
+
+# Note how to manipulate the markup tags
+# Take care of backslashes!!!
+nmt <- function(x, alpha){
+    p <- ad.test(x)$p.value
+    if(p < alpha/5){
+        sprintf('$\\hs$', p)
+    } else if(p < alpha){
+        sprintf('$\\gs{%2.2f}$', p)
+    } else {
+        sprintf('$\\ns{%2.2f}$', p)
+    }
+}
+@
+
+Now, the real amazingly jaw dropping magic of \CRANpkg{knitr} with the 
+powers of the \CRANpkg{tables} package. Be prepared!
+
+I use \CRANpkg{tables} \textit{tabular} function to generate a 
+\LaTeX creature. Observe the next expression:
+
+<<tabular01, results='asis'>>=
+tbl <- tabular(Time ~ All(assay1) * ((Heading('$\\overline{x} (sd)$') * msd) + 
+(Heading('$p_{A}$') * nmt * Arguments(alpha=0.05))), data=assay1)
+@
+
+Let's strip it down. The right side of the formula defines what names will be 
+used in rows and the left side the columns. In this context, the + operator 
+concatenate rows or cols, side by side. The * acts like some sort of cartesian 
+product. The operator \textit{All} will select all (row)names not explicitly 
+called. \textit{Heading} will manipulate the appearance of selected names and 
+summay functions and Arguments will provided args for these functions. Of 
+course, the package has many more options. It's up to you to 
+explore the specific details. Anyway, it's time for some encouraging examples.
+
+\begin{table}[ht]
+\centering
+<<table01, echo=FALSE, results='asis'>>=
+latex(tbl)
+@ 
+\caption{Nicely formated table with \CRANpkg{tables}! No more tedious 
+copy/paste! Goodbye, useless dummy whitespace!}
+\end{table}
+
+\section{Session info}
+
+This document was made with:
+
+<<Session, results='asis'>>=
+toLatex(sessionInfo())
+@
+
+<<refs>>=
+# Select packages to cite:
+citPkgs <- names(sessionInfo()$otherPkgs)
+# Write the bibtex file:
+write_bib(citPkgs, file="pkg.bib")
+@
+
+\bibliographystyle{plain}
+\bibliography{../toRturials}
+
+\end{document}
