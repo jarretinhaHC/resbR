@@ -9,39 +9,42 @@ library(grid)
 library(ggplot2)
 library(RColorBrewer)
 
-files <- Sys.glob('/health/CNES/NESCON/professionals/*.psv')
 
-mainDir <- file.path('/home/jarretinha/dev/resbR/scratch/selected')
-setwd(mainDir)
+# Set files and folders
 
-header <- read.table('/home/jarretinha/dev/resbR/R/static/carga_horaria_header',
+baseDir <- file.path('/health/CNES/NESCON')
+resultsDir <- file.path('/home/jarretinha/dev/resbR/scratch/selected')
+devDir <- file.path('/home/jarretinha/dev/resbR')
+refDir <- file.path(paste(devDir, 'static')
+
+files <- Sys.glob(paste(baseDir, 'professionals/psv/*.psv', sep='/'))
+
+header <- read.table(file.path(paste(refDir, 'carga_horaria_header', sep='/')),
                      header=F,
                      sep='\t',
+                     as.is=TRUE,
                      stringsAsFactor=FALSE)[[1]]
 
-regions <- read.table('/home/jarretinha/dev/resbR/R/static/CIR_BR.tsv',
+regions <- read.table(file.path(paste(refDir, 'CIR_BR.tsv', sep='/')),
                       sep='\t',
                       header=TRUE,
                       stringsAsFactor=FALSE,
+                      as.is=TRUE,
                       quote="")
 
-selected <- read.table('/home/jarretinha/dev/resbR/R/static/selected_CIR.tsv',
+selected <- read.table(file.path(paste(refDir, 'selected_CIR.tsv', sep='/')),
                        sep='\t',
                        header=TRUE,
                        stringsAsFactor=FALSE,
+                       as.is=TRUE,
                        quote="")
 
-selected$CO_CIR <- as.character(selected$CO_CIR)
-
-to_from_CBO <- read.table('/home/jarretinha/dev/resbR/R/static/de_para_CBO.csv',
+to_from_CBO <- read.table(file.path(paste(refDir, 'selected_CIR.tsv', sep='/')),
                           sep=',',
                           header=TRUE,
                           stringsAsFactor=FALSE,
                           row.names='DS_CBO_OCUPACAO',
                           quote="")
-
-
-standard_breaks=trans_breaks('identity', function(t) t, n=10)
 
 # Auxiliary function to count counts
 charter <- function(idx, val){
@@ -51,22 +54,31 @@ charter <- function(idx, val){
 
 }
 
-# Load all data
-tmp <- list()
-for(f in files){
+# Data loader
+# Should take care here! Critical information in filenames
+# Specifically designed for CNES dump/csv
+# Yes, I know that's not good
 
-    competence <- unlist(strsplit(f, '[._]'))[4]
-    tmp[[competence]] <- fread(f,
-                               sep='|',
-                               integer64='character',
-                               header=FALSE,
-                               stringsAsFactor=FALSE)
+bulk_data_loader <- function(files){
+    tmp <- list()
+    for(f in files){
+        competence <- unlist(strsplit(f, '[._]'))[4]
+        tmp[[competence]] <- fread(f,
+                                   sep='|',
+                                   integer64='character',
+                                   header=FALSE,
+                                   stringsAsFactor=FALSE)
+        setnames(tmp[[competence]], c(header, 'V57'))
+        return(rbindlist(tmp)
 
-    setnames(tmp[[competence]], c(header, 'V57'))
+    }
 
 }
 
-workload <- rbindlist(tmp)
+workload <- bulk_data_loader(files) 
+
+
+
 
 # Clean up unused data
 rm(tmp)

@@ -1,3 +1,7 @@
+# Basic setup for graphics.
+
+
+standard_breaks=trans_breaks('identity', function(t) t, n=10)
 
 
     plt <- ggplot(data=counts, aes(N))
