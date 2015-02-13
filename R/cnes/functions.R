@@ -47,4 +47,3 @@ charter <- function(idx, val){
 
 }
 
-
