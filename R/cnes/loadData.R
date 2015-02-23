@@ -3,7 +3,7 @@
 
 # Main data folder and files
 dataDir <- file.path('/health/CNES/NESCON')
-files <- Sys.glob(paste(dataDir, 'professionals/psv/*.psv', sep='/'))
+files <- Sys.glob(paste(dataDir, 'professionals/psv/current/*.psv', sep='/'))
 
 # Devel folder
 devDir <- file.path('/home/jarretinha/dev/resbR')
@@ -31,6 +31,8 @@ regions <- read.table(file.path(paste(refDir, 'CIR_BR.tsv', sep='/')),
                       stringsAsFactor=FALSE,
                       as.is=TRUE,
                       quote="")
+
+rownames(regions) <- regions$CO_MUNICIPIO
 
 # Selected health regions for this study
 selected <- read.table(file.path(paste(refDir, 'selected_CIR.tsv', sep='/')),
