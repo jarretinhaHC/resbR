@@ -63,6 +63,9 @@ for(cir in unique(selected_regions$CO_CIR)){
     counts$VP <- with(counts, VÍNCULOS/PROFISSIONAIS)
     counts$VE <- with(counts, VÍNCULOS/ESTABELECIMENTOS)
     counts$PE <- with(counts, PROFISSIONAIS/ESTABELECIMENTOS)
+    counts$PH <- with(counts, PROFISSIONAIS/region$POPULACAO * 1000)
+    counts$VH <- with(counts, VÍNCULOS/region$POPULACAO * 1000)
+    counts$EH <- with(counts, ESTABELECIMENTOS/region$POPULACAO * 1000)
 
     # Ratios, ratios, ratios
     standard_breaks=trans_breaks('identity', function(t) t, n=10)
@@ -70,7 +73,7 @@ for(cir in unique(selected_regions$CO_CIR)){
     # Convert to long format
     df.long <- melt(counts,
                     id.vars=c('NU_COMPETENCIA', 'MUNICÍPIOS'),
-                    measure.vars=c('VP', 'VE', 'PE'),
+                    measure.vars=c('VP', 'VE', 'PE', 'VH', 'PH', 'EH'),
                     variable.name='RAZÃO',
                     value.name='R')
 
@@ -91,23 +94,33 @@ for(cir in unique(selected_regions$CO_CIR)){
                                     expand=c(0, 0))
 
     # Set up fill scale
-    plt <- plt + scale_fill_brewer(palette='Set1')
+    plt <- plt + scale_fill_brewer('',
+                                   palette='Set1')
+#                                   labels=c('V/P',
+#                                            'V/E',
+#                                            'P/E',
+#                                            ''))
 
     # Set up theme stuff
     plt <- plt + theme_classic()
     
-    #Basic text
+    # Basic text
     plt <- plt + theme(text=element_text(size=16))
     plt <- plt + theme(axis.text.x=element_text(size=6,
                                                  angle=90,
                                                  vjust=0.5,
                                                  hjust=1))
+ 
+    # Legend adjustments
+    plt <- plt + theme(legend.position='right',
+                       legend.direction='vertical')
+
 
     # Set up faceting
     plt <- plt + facet_wrap(~NU_COMPETENCIA, ncol=2)
 
     pdf_name <- paste0(region_name, ' - Profissionais, vínculos e estabelecimentos por município - razões.pdf')
-    pdf(paste(focalDir, pdf_name, sep='/'), width=8)
+    pdf(paste(focalDir, pdf_name, sep='/'), height=7, width=7)
     print(plt)
     dev.off()
 
@@ -138,7 +151,9 @@ for(cir in unique(selected_regions$CO_CIR)){
                                     expand=c(0, 0))
 
     # Set up fill scale
-    plt <- plt + scale_fill_brewer(palette='Set1')
+    plt <- plt + scale_fill_brewer('',
+                                   palette='Set1',
+                                   labels=c('Profissionais', 'Vínculos'))
 
     # Set up theme stuff
     plt <- plt + theme_classic()
@@ -156,11 +171,9 @@ for(cir in unique(selected_regions$CO_CIR)){
 
     # Plot
     pdf_name <- paste0(region_name, ' - Profissionais e vínculos por município - contagem.pdf')
-    pdf(paste(focalDir, pdf_name, sep='/'), width=8)
+    pdf(paste(focalDir, pdf_name, sep='/'), height=7, width=7)
     print(plt)
     dev.off()
-
-    p1 <- plt
 
     # Professional and contracts, counts
     standard_breaks=trans_breaks('identity', function(t) t, n=10)
@@ -189,7 +202,9 @@ for(cir in unique(selected_regions$CO_CIR)){
                                     expand=c(0, 0))
 
     # Set up fill scale
-    plt <- plt + scale_fill_brewer(palette='Set1')
+    plt <- plt + scale_fill_brewer('',
+                                   palette='Set1',
+                                   labels=c('Profissionais', 'Vínculos'))
     
     # Set up theme stuff
     plt <- plt + theme_classic()
@@ -207,32 +222,8 @@ for(cir in unique(selected_regions$CO_CIR)){
 
     # Plot
     pdf_name <- paste0(region_name, ' - Profissionais e vínculos por município - percentual.pdf')
-    pdf(paste(focalDir, pdf_name, sep='/'), width=8)
+    pdf(paste(focalDir, pdf_name, sep='/'), height=7, width=7)
     print(plt)
-    dev.off()
-
-    p2 <- plt + theme_classic() %+replace% theme(panel.background=element_rect(fill=NA))
-
-    g1 <- ggplot_gtable(ggplot_build(p1))
-    g2 <- ggplot_gtable(ggplot_build(p2))
-  
-    pp <- c(subset(g1$layout, name == 'panel', se = t:r))
-    g <- gtable_add_grob(g1, g2$grobs[[which(g2$layout$name == 'panel')]],
-                         pp$t, pp$l, pp$b, pp$l)
-
-    # Axis tweaking
-    ia <- which(g2$layout$name == 'axis-l')
-    ga <- g2$grobs[[ia]]
-    ax <- ga$children[[2]]
-    ax$widths <- rev(ax$widths)
-    ax$grobs <- rev(ax$grobs)
-    ax$grobs[[1]]$x <- ax$grobs[[1]]$x - unit(1, 'npc') + unit(0.15, 'cm')
-    g <- gtable_add_cols(g, g2$widths[g2$layout[ia, ]$l], length(g$widths) - 1)
-    g <- gtable_add_grob(g, ax, pp$t, length(g$widths) - 1, pp$b)
-
-    # Pray and draw
-    pdf(paste0(region_name, '_test.pdf'))
-    print(grid.draw(g))
     dev.off()
 
     ### Beware!!! Complicated manipulations below
@@ -270,7 +261,7 @@ for(cir in unique(selected_regions$CO_CIR)){
             df <- data.frame(NM_MUNICIPIO=region[cities, ]$NM_MUNICIPIO,
                              CONTAGEM=0,
                              PERCENTUAL=0,
-                             QTD_MUNICIPIOS=unique(d$L),
+                             QTD_MUNICIPIOS=as.character(unique(d$L)),
                              NU_COMPETENCIA=unique(d$NU_COMPETENCIA),
                              GRUPO=unique(region$GRUPO),
                              row.names=cities)
@@ -291,6 +282,101 @@ for(cir in unique(selected_regions$CO_CIR)){
     }
 
     counts <- rbindlist(df_list)
+
+    # Professionals, contribution per city
+    standard_breaks=trans_breaks('identity', function(t) t, n=10)
+ 
+    # Create ggplot structure and define aesthetics
+    plt <- ggplot(data=counts, aes(x=NM_MUNICIPIO,
+                                   y=PERCENTUAL,
+                                   fill=QTD_MUNICIPIOS))
+
+    # Add geoms
+    plt <- plt + geom_bar(stat='identity',
+                          color='black',
+                          position='dodge',
+                          size=0.1,
+                          drop=FALSE)
+
+    # Set up x scale
+    plt <- plt + scale_x_discrete(name='Município',
+                                  expand=c(0, 0))
+ 
+    # Set up y scale
+    plt <- plt + scale_y_continuous(name='Percentual',
+                                    breaks=standard_breaks,
+                                    limits=c(0,100),
+                                    expand=c(0, 0))
+
+    # Set up fill scale
+    plt <- plt + scale_fill_brewer('Municípios', palette='Set1')
+    
+    # Set up theme stuff
+    plt <- plt + theme_classic()
+    
+    #Basic text
+    plt <- plt + theme(text=element_text(size=16))
+    plt <- plt + theme(axis.text.x=element_text(size=6,
+                                                 angle=90,
+                                                 vjust=0.5,
+                                                 hjust=1))
+    # Legend adjustments
+    plt <- plt + theme(legend.position='top')
+    # Set up faceting
+    plt <- plt + facet_wrap(~NU_COMPETENCIA, ncol=1)
+
+    # Plot
+    pdf_name <- paste0(region_name, ' - Profissionais por município - contribuição percentual.pdf')
+    pdf(paste(focalDir, pdf_name, sep='/'), height=7, width=7)
+    print(plt)
+    dev.off()
+
+    # Professionals, brute contribution per city
+    standard_breaks=trans_breaks('identity', function(t) t, n=10)
+ 
+    # Create ggplot structure and define aesthetics
+    plt <- ggplot(data=counts, aes(x=NM_MUNICIPIO,
+                                   y=CONTAGEM,
+                                   fill=QTD_MUNICIPIOS))
+
+    # Add geoms
+    plt <- plt + geom_bar(stat='identity',
+                          color='black',
+                          position='dodge',
+                          size=0.1,
+                          drop=FALSE)
+
+    # Set up x scale
+    plt <- plt + scale_x_discrete(name='Município',
+                                  expand=c(0, 0))
+ 
+    # Set up y scale
+    plt <- plt + scale_y_continuous(name='Contagem',
+                                    breaks=standard_breaks,
+                                    expand=c(0, 0))
+
+    # Set up fill scale
+    plt <- plt + scale_fill_brewer('Municípios', palette='Set1')
+    
+    # Set up theme stuff
+    plt <- plt + theme_classic()
+    
+    #Basic text
+    plt <- plt + theme(text=element_text(size=16))
+    plt <- plt + theme(axis.text.x=element_text(size=6,
+                                                 angle=90,
+                                                 vjust=0.5,
+                                                 hjust=1))
+    # Legend adjustments
+    plt <- plt + theme(legend.position='top')
+    # Set up faceting
+    plt <- plt + facet_wrap(~NU_COMPETENCIA, ncol=1)
+
+    # Plot
+    pdf_name <- paste0(region_name, ' - Profissionais por município - contribuição bruta.pdf')
+    pdf(paste(focalDir, pdf_name, sep='/'), height=7, width=7)
+    print(plt)
+    dev.off()
 
     ### Beware!!! Complicated manipulations below
     # Bar panel, cities per professional per competence
@@ -326,7 +412,7 @@ for(cir in unique(selected_regions$CO_CIR)){
             df <- data.frame(NM_MUNICIPIO=region[cities, ]$NM_MUNICIPIO,
                              CONTAGEM=0,
                              PERCENTUAL=0,
-                             QTD_VINCULOS=unique(d$L),
+                             QTD_VINCULOS=as.character(unique(d$L)),
                              NU_COMPETENCIA=unique(d$NU_COMPETENCIA),
                              GRUPO=unique(region$GRUPO),
                              row.names=cities)
@@ -347,5 +433,104 @@ for(cir in unique(selected_regions$CO_CIR)){
     }
 
     counts <- rbindlist(df_list)
+
+    # Contracts, contribution per city
+    standard_breaks=trans_breaks('identity', function(t) t, n=10)
+ 
+    # Create ggplot structure and define aesthetics
+    plt <- ggplot(data=counts, aes(x=NM_MUNICIPIO,
+                                   y=PERCENTUAL,
+                                   fill=QTD_VINCULOS))
+
+    # Add geoms
+    plt <- plt + geom_bar(stat='identity',
+                          color='black',
+                          position='dodge',
+                          size=0.1,
+                          drop=FALSE)
+
+    # Set up x scale
+    plt <- plt + scale_x_discrete(name='Município',
+                                  expand=c(0, 0))
+ 
+    # Set up y scale
+    plt <- plt + scale_y_continuous(name='Percentual',
+                                    breaks=standard_breaks,
+                                    limits=c(0,100),
+                                    expand=c(0, 0))
+
+    # Set up fill scale
+    plt <- plt + scale_fill_brewer('Vínculos', palette='Set3')
+    
+    # Set up theme stuff
+    plt <- plt + theme_classic()
+    
+    #Basic text
+    plt <- plt + theme(text=element_text(size=16))
+    plt <- plt + theme(axis.text.x=element_text(size=6,
+                                                 angle=90,
+                                                 vjust=0.5,
+                                                 hjust=1))
+    # Legend adjustments
+    plt <- plt + theme(legend.position='top')
+    # Set up faceting
+    plt <- plt + facet_wrap(~NU_COMPETENCIA, ncol=1)
+
+    # Plot
+    pdf_name <- paste0(region_name, ' - Vínculos por município - contribuição percentual.pdf')
+    pdf(paste(focalDir, pdf_name, sep='/'), height=7, width=7)
+    print(plt)
+    dev.off()
+
+    # Contracts, contribution per city
+    standard_breaks=trans_breaks('identity', function(t) t, n=10)
+ 
+    # Create ggplot structure and define aesthetics
+    plt <- ggplot(data=counts, aes(x=NM_MUNICIPIO,
+                                   y=CONTAGEM,
+                                   fill=QTD_VINCULOS))
+
+    # Add geoms
+    plt <- plt + geom_bar(stat='identity',
+                          color='black',
+                          position='dodge',
+                          size=0.1,
+                          drop=FALSE)
+
+    # Set up x scale
+    plt <- plt + scale_x_discrete(name='Município',
+                                  expand=c(0, 0))
+ 
+    # Set up y scale
+    plt <- plt + scale_y_continuous(name='Contagem',
+                                    breaks=standard_breaks,
+                                    limits=c(0,100),
+                                    expand=c(0, 0))
+
+    # Set up fill scale
+    plt <- plt + scale_fill_brewer('Vínculos', palette='Set3')
+    
+    # Set up theme stuff
+    plt <- plt + theme_classic()
+    
+    #Basic text
+    plt <- plt + theme(text=element_text(size=16))
+    plt <- plt + theme(axis.text.x=element_text(size=6,
+                                                 angle=90,
+                                                 vjust=0.5,
+                                                 hjust=1))
+    # Legend adjustments
+    plt <- plt + theme(legend.position='top')
+    # Set up faceting
+    plt <- plt + facet_wrap(~NU_COMPETENCIA, ncol=1)
+
+    # Plot
+    pdf_name <- paste0(region_name, ' - Vínculos por município - contribuição percentual.pdf')
+    pdf(paste(focalDir, pdf_name, sep='/'), height=7, width=7)
+    print(plt)
+    dev.off()
+
+
+
 
 }

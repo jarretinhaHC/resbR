@@ -63,8 +63,11 @@ for(cir in unique(selected_regions$CO_CIR)){
     counts$VP <- with(counts, sprintf('%2.2f', VÍNCULOS/PROFISSIONAIS))
     counts$VE <- with(counts, sprintf('%2.2f', VÍNCULOS/ESTABELECIMENTOS))
     counts$PE <- with(counts, sprintf('%2.2f', PROFISSIONAIS/ESTABELECIMENTOS))
+    counts$PH <- with(counts, sprintf('%2.2f', PROFISSIONAIS/region$POPULACAO * 1000))
+    counts$VH <- with(counts, sprintf('%2.2f', VÍNCULOS/region$POPULACAO * 1000))
+    counts$EH <- with(counts, sprintf('%2.2f', ESTABELECIMENTOS/region$POPULACAO * 1000))
 
-    wb_name <- paste0(region_name, ' - Seção 01 - Contagens básicas por município.xls')
+    wb_name <- paste0(region_name, ' - Contagens básicas por município.xls')
     wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
     counts <- split(counts, counts$NU_COMPETENCIA)
 
@@ -134,7 +137,7 @@ for(cir in unique(selected_regions$CO_CIR)){
 
     counts <- rbindlist(df_list)
 
-    wb_name <- paste0(region_name, ' - Seção 02 - Municípios por profissional - Contribuição.xls')
+    wb_name <- paste0(region_name, ' - Municípios por profissional - Contribuição.xls')
     wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
     counts <- split(counts, counts$NU_COMPETENCIA)
 
@@ -203,7 +206,7 @@ for(cir in unique(selected_regions$CO_CIR)){
 
     counts <- rbindlist(df_list)
 
-    wb_name <- paste0(region_name, ' - Seção 02 - Municípios por vínculo - Contribuição.xls')
+    wb_name <- paste0(region_name, ' - Municípios por vínculo - Contribuição.xls')
     wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
     counts <- split(counts, counts$NU_COMPETENCIA)
 
