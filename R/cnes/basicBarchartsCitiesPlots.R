@@ -436,6 +436,8 @@ for(cir in unique(selected_regions$CO_CIR)){
 
     # Contracts, contribution per city
     standard_breaks=trans_breaks('identity', function(t) t, n=10)
+    colourCount <- length(unique(counts$QTD_VINCULOS))
+    getPalette <- colorRampPalette(brewer.pal(12, 'Set3'))
  
     # Create ggplot structure and define aesthetics
     plt <- ggplot(data=counts, aes(x=NM_MUNICIPIO,
@@ -460,7 +462,7 @@ for(cir in unique(selected_regions$CO_CIR)){
                                     expand=c(0, 0))
 
     # Set up fill scale
-    plt <- plt + scale_fill_brewer('Vínculos', palette='Set3')
+    plt <- plt + scale_fill_manual('Vínculos', values=getPalette(colourCount))
     
     # Set up theme stuff
     plt <- plt + theme_classic()
@@ -473,6 +475,7 @@ for(cir in unique(selected_regions$CO_CIR)){
                                                  hjust=1))
     # Legend adjustments
     plt <- plt + theme(legend.position='top')
+    plt <- plt + guides(fill=guide_legend(nrow=2))
     # Set up faceting
     plt <- plt + facet_wrap(~NU_COMPETENCIA, ncol=1)
 
@@ -484,7 +487,9 @@ for(cir in unique(selected_regions$CO_CIR)){
 
     # Contracts, contribution per city
     standard_breaks=trans_breaks('identity', function(t) t, n=10)
- 
+    colourCount <- length(unique(counts$QTD_VINCULOS))
+    getPalette <- colorRampPalette(brewer.pal(12, 'Set3'))
+
     # Create ggplot structure and define aesthetics
     plt <- ggplot(data=counts, aes(x=NM_MUNICIPIO,
                                    y=CONTAGEM,
@@ -508,7 +513,7 @@ for(cir in unique(selected_regions$CO_CIR)){
                                     expand=c(0, 0))
 
     # Set up fill scale
-    plt <- plt + scale_fill_brewer('Vínculos', palette='Set3')
+    plt <- plt + scale_fill_manual('Vínculos', values=getPalette(colourCount))
     
     # Set up theme stuff
     plt <- plt + theme_classic()
@@ -521,16 +526,14 @@ for(cir in unique(selected_regions$CO_CIR)){
                                                  hjust=1))
     # Legend adjustments
     plt <- plt + theme(legend.position='top')
+    plt <- plt + guides(fill=guide_legend(nrow=2))
     # Set up faceting
     plt <- plt + facet_wrap(~NU_COMPETENCIA, ncol=1)
 
     # Plot
-    pdf_name <- paste0(region_name, ' - Vínculos por município - contribuição percentual.pdf')
+    pdf_name <- paste0(region_name, ' - Vínculos por município - contribuição bruta.pdf')
     pdf(paste(focalDir, pdf_name, sep='/'), height=7, width=7)
     print(plt)
     dev.off()
-
-
-
 
 }

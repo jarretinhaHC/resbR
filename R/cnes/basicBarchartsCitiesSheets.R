@@ -69,6 +69,7 @@ for(cir in unique(selected_regions$CO_CIR)){
 
     wb_name <- paste0(region_name, ' - Contagens básicas por município.xls')
     wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
+    setStyleAction(wb, XLC$'STYLE_ACTION.NONE')
     counts <- split(counts, counts$NU_COMPETENCIA)
 
     for(s in names(counts)){
