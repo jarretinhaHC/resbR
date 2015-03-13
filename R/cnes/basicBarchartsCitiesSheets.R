@@ -66,6 +66,9 @@ for(cir in unique(selected_regions$CO_CIR)){
     counts$PH <- with(counts, sprintf('%2.2f', PROFISSIONAIS/region$POPULACAO * 1000))
     counts$VH <- with(counts, sprintf('%2.2f', VÍNCULOS/region$POPULACAO * 1000))
     counts$EH <- with(counts, sprintf('%2.2f', ESTABELECIMENTOS/region$POPULACAO * 1000))
+    counts$POPULAÇÃO <- region$POPULACAO
+
+
 
     wb_name <- paste0(region_name, ' - Contagens básicas por município.xls')
     wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)

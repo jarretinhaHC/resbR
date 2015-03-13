@@ -2,6 +2,7 @@
 ### Basic barcharts  ###
 
 ### Focus on professionals
+competences <-  as.character(unique(data$NU_COMPETENCIA))
 
 for(cir in unique(selected_regions$CO_CIR)){
 
@@ -14,11 +15,31 @@ for(cir in unique(selected_regions$CO_CIR)){
     dir.create(focalDir)
 
     #Filter things by region
-    fdata  <- with(data, data[which(CO_MUNICIPIO_GESTOR %in% region$CO_MUNICIPIO)])
+    fdata <- with(data, data[which(CO_CIR == cir)])
+ 
+
+    # Filter things by CPF
+    # CPF with touch smth outside focal region per competence
+    cpf_out <- unique(data[which(CO_CIR != cir), c('NU_COMPETENCIA', 'CO_CPF'),
+                      with=F])
+    cpf_out <- split(cpf_out, cpf_out$NU_COMPETENCIA)
+    # CPF wich are restriced to the focal region per competence
+    cpf_ins <- unique(fdata[, c('NU_COMPETENCIA', 'CO_CPF'), with=F])
+    cpf_ins <- split(cpf_ins, cpf_ins$NU_COMPETENCIA)
+
+    cpf_exc <-list()
+    for(c in competences){
+
+        cpf_exc[[c]] <- filter(cpf_ins[[c]], !cpf_ins[[c]]$CO_CPF %in%
+                               cpf_out[[c]]$CO_CPF)
+
+    }
 
     # Bar chart of contracts per professional per competence
     # Select focal columns
-    tmp <- fdata[, c('CO_CNES', 'NU_COMPETENCIA', 'CO_CPF'), with=F]
+    tmp <- data[, c('CO_CNES', 'NU_COMPETENCIA', 'CO_CPF'), with=F]
+    tmp_all <- tmp[which(tmp$CO_CPF %in% fdata$CO_CPF)]
+    tmp_ins <-  
     counts <- tmp[, {v <- charter(CO_CNES, CO_CPF);
                   list(VÍNCULOS=as.integer(names(v)),
                        CONTAGEM=as.vector(v))},
