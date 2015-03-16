@@ -3,25 +3,29 @@
 
 ### Focus on professionals
 
-region_name <- 'Brasil'
-# Create folder to store results
-focalDir <- file.path(paste(resultsDir, region_name, sep='/'))
-dir.create(focalDir)
+for(cir in selected_cirs){
 
-# Select focal columns
-tmp <- data[, c('CO_CNES', 'NU_COMPETENCIA', 'CO_CPF'), with=F]
-counts <- tmp[, {v <- charter(CO_CNES, CO_CPF);
-              list(VÍNCULOS=as.integer(names(v)),
-                   CONTAGEM=as.vector(v))},
-              by=NU_COMPETENCIA]
+    region <- with(selected_regions, selected_regions[which(CO_CIR == cir), ])
+    region_name <- unique(region$NM_CIR)
+    
+    # Create folder to store results
+    focalDir <- file.path(paste(resultsDir, region_name, sep='/'))
+    dir.create(focalDir)
 
-counts <- counts[, SOMA := sum(CONTAGEM), by=NU_COMPETENCIA]
-counts <- counts[, PERCENTUAL := sprintf('%2.3f', CONTAGEM/SOMA * 100)]
-counts <- counts[, SOMA := NULL]
+    # Select focal columns
+    tmp <- data[, c('CO_CNES', 'NU_COMPETENCIA', 'CO_CPF'), with=F]
+    counts <- tmp[, {v <- charter(CO_CNES, CO_CPF);
+                  list(VÍNCULOS=as.integer(names(v)),
+                       CONTAGEM=as.vector(v))},
+                  by=NU_COMPETENCIA]
 
-wb_name <- paste0(region_name, ' - Vínculos por profissional.xls')
-wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
-counts <- split(counts, counts$NU_COMPETENCIA)
+    counts <- counts[, SOMA := sum(CONTAGEM), by=NU_COMPETENCIA]
+    counts <- counts[, PERCENTUAL := CONTAGEM / SOMA * 100]
+    counts <- counts[, SOMA := NULL]
+    
+    wb_name <- paste0(region_name, ' - Vínculos por profissional.xls')
+    wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
+    counts <- split(counts, counts$NU_COMPETENCIA)
 
 for(s in names(counts)){
 
@@ -44,7 +48,7 @@ counts <- tmp[, {v <- charter(CO_CNES, CO_CPF);
               by=NU_COMPETENCIA]
 
 counts <- counts[, SOMA := sum(CONTAGEM), by=NU_COMPETENCIA]
-counts <- counts[, PERCENTUAL := sprintf('%2.3f', CONTAGEM/SOMA * 100)]
+counts <- counts[, PERCENTUAL := CONTAGEM / SOMA * 100]
 counts <- counts[, SOMA := NULL]
 
 wb_name <- paste0(region_name, ' - Estabelecimentos por profissional.xls')
@@ -70,7 +74,7 @@ counts <- tmp[, {v <- charter(MUN.NO_MUNICIPIO, CO_CPF);
               by=NU_COMPETENCIA]
 
 counts <- counts[, SOMA := sum(CONTAGEM), by=NU_COMPETENCIA]
-counts <- counts[, PERCENTUAL := sprintf('%2.3f', CONTAGEM/SOMA * 100)]
+counts <- counts[, PERCENTUAL := CONTAGEM / SOMA * 100]
 counts <- counts[, SOMA := NULL]
 
 wb_name <- paste0(region_name, ' - Municípios por profissional.xls')
@@ -96,7 +100,7 @@ counts <- tmp[, {v <- charter(DS_CBO_OCUPACAO, CO_CPF);
               by=NU_COMPETENCIA]
 
 counts <- counts[, SOMA := sum(CONTAGEM), by=NU_COMPETENCIA]
-counts <- counts[, PERCENTUAL := sprintf('%2.3f', CONTAGEM/SOMA * 100)]
+counts <- counts[, PERCENTUAL := CONTAGEM / SOMA]
 counts <- counts[, SOMA := NULL]
 
 wb_name <- paste0(region_name, ' - Ocupações por profissional.xls')
@@ -120,10 +124,34 @@ counts <- tmp[, {v <- charter(CO_CIR, CO_CPF);
               by=NU_COMPETENCIA]
 
 counts <- counts[, SOMA := sum(CONTAGEM), by=NU_COMPETENCIA]
-counts <- counts[, PERCENTUAL := sprintf('%2.3f', CONTAGEM/SOMA * 100)]
+counts <- counts[, PERCENTUAL := CONTAGEM / SOMA * 100]
 counts <- counts[, SOMA := NULL]
 
 wb_name <- paste0(region_name, ' - Regíões por profissional.xls')
+wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
+counts <- split(counts, counts$NU_COMPETENCIA)
+
+for(s in names(counts)){
+    createSheet(wb, s)
+    writeWorksheet(wb, counts[[s]], s)
+}
+
+saveWorkbook(wb)
+
+# UF per professional per competence
+tmp <- data[, c('NU_COMPETENCIA', 'CO_CPF', 'UF.SG_UF'), with=F]
+tmp <- unique(tmp)
+
+counts <- tmp[, {v <- charter(UF.SG_UF, CO_CPF);
+              list(UFs=names(v),
+                   CONTAGEM=as.vector(v))},
+              by=NU_COMPETENCIA]
+
+counts <- counts[, SOMA := sum(CONTAGEM), by=NU_COMPETENCIA]
+counts <- counts[, PERCENTUAL := CONTAGEM / SOMA * 100]
+counts <- counts[, SOMA := NULL]
+
+wb_name <- paste0(region_name, ' - UFs por profissional.xls')
 wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
 counts <- split(counts, counts$NU_COMPETENCIA)
 

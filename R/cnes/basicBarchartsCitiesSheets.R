@@ -3,7 +3,7 @@
 
 ### Focus on cities 
 
-for(cir in unique(selected_regions$CO_CIR)){
+for(cir in selected_cir){
 
     # Isolate focal health region
     region <- with(selected_regions, selected_regions[which(CO_CIR == cir), ])
@@ -14,7 +14,7 @@ for(cir in unique(selected_regions$CO_CIR)){
     dir.create(focalDir)
 
     #Filter things by region
-    fdata  <- with(data, data[which(CO_MUNICIPIO_GESTOR %in% region$CO_MUNICIPIO)])
+    fdata  <- with(data, data[which(CO_CIR == cir)])
 
     # Contracts per city per competence
     tmp <- fdata[, c('NU_COMPETENCIA', 'CO_CPF', 'MUN.NO_MUNICIPIO'), with=F]
@@ -25,7 +25,7 @@ for(cir in unique(selected_regions$CO_CIR)){
                   by=NU_COMPETENCIA]
 
     counts <- counts[, SOMA := sum(VÍNCULOS), by=NU_COMPETENCIA]
-    counts <- counts[, "VÍNCULOS (%)" := sprintf('%2.3f', VÍNCULOS/SOMA * 100)]
+    counts <- counts[, "VÍNCULOS (%)" := VÍNCULOS / SOMA * 100]
     counts <- counts[, SOMA := NULL]
 
     # Professionals per city per competence
@@ -35,13 +35,7 @@ for(cir in unique(selected_regions$CO_CIR)){
                     PROFISSIONAIS=as.vector(v))},
                by=NU_COMPETENCIA]
 
-    tmp <- tmp[, SOMA := sum(PROFISSIONAIS), by=NU_COMPETENCIA]
-    tmp <- tmp[, "PROFISSIONAIS (%)" := sprintf('%2.3f', PROFISSIONAIS/SOMA *
-                                                100)]
-    tmp <- tmp[, SOMA := NULL]
-
     counts$PROFISSIONAIS <- tmp$PROFISSIONAIS
-    counts$"PROFISSIONAIS (%)" <- tmp$"PROFISSIONAIS (%)"
 
     # Places per city per competence
     tmp <- fdata[, c('NU_COMPETENCIA', 'CO_CNES', 'MUN.NO_MUNICIPIO'), with=F]
@@ -53,22 +47,19 @@ for(cir in unique(selected_regions$CO_CIR)){
                by=NU_COMPETENCIA]
 
     tmp <- tmp[, SOMA := sum(ESTABELECIMENTOS), by=NU_COMPETENCIA]
-    tmp <- tmp[, "ESTABELECIMENTOS (%)" := sprintf('%2.3f',
-                                                   ESTABELECIMENTOS/SOMA * 100)]
+    tmp <- tmp[, "ESTABELECIMENTOS (%)" := ESTABELECIMENTOS / SOMA * 100]
     tmp <- tmp[, SOMA := NULL]
 
     counts$ESTABELECIMENTOS <- tmp$ESTABELECIMENTOS
     counts$"ESTABELECIMENTOS (%)" <- tmp$"ESTABELECIMENTOS (%)"
 
-    counts$VP <- with(counts, sprintf('%2.2f', VÍNCULOS/PROFISSIONAIS))
-    counts$VE <- with(counts, sprintf('%2.2f', VÍNCULOS/ESTABELECIMENTOS))
-    counts$PE <- with(counts, sprintf('%2.2f', PROFISSIONAIS/ESTABELECIMENTOS))
-    counts$PH <- with(counts, sprintf('%2.2f', PROFISSIONAIS/region$POPULACAO * 1000))
-    counts$VH <- with(counts, sprintf('%2.2f', VÍNCULOS/region$POPULACAO * 1000))
-    counts$EH <- with(counts, sprintf('%2.2f', ESTABELECIMENTOS/region$POPULACAO * 1000))
+    counts$VP <- with(counts, VÍNCULOS / PROFISSIONAIS)
+    counts$VE <- with(counts, VÍNCULOS / ESTABELECIMENTOS)
+    counts$PE <- with(counts, PROFISSIONAIS / ESTABELECIMENTOS)
+    counts$PH <- with(counts, PROFISSIONAIS / region$POPULACAO)
+    counts$VH <- with(counts, VÍNCULOS / region$POPULACAO) 
+    counts$EH <- with(counts, ESTABELECIMENTOS / region$POPULACAO)
     counts$POPULAÇÃO <- region$POPULACAO
-
-
 
     wb_name <- paste0(region_name, ' - Contagens básicas por município.xls')
     wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
@@ -143,6 +134,7 @@ for(cir in unique(selected_regions$CO_CIR)){
 
     wb_name <- paste0(region_name, ' - Municípios por profissional - Contribuição.xls')
     wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
+    setStyleAction(wb, XLC$'STYLE_ACTION.NONE')
     counts <- split(counts, counts$NU_COMPETENCIA)
 
     for(s in names(counts)){
@@ -212,6 +204,7 @@ for(cir in unique(selected_regions$CO_CIR)){
 
     wb_name <- paste0(region_name, ' - Municípios por vínculo - Contribuição.xls')
     wb <- loadWorkbook(paste(focalDir, wb_name, sep='/'), create=TRUE)
+    setStyleAction(wb, XLC$'STYLE_ACTION.NONE')
     counts <- split(counts, counts$NU_COMPETENCIA)
 
     for(s in names(counts)){

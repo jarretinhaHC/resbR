@@ -17,6 +17,7 @@ bulk_data_loader <- function(files, header){
                                    sep='|',
                                    integer64='character',
                                    header=FALSE,
+                                   colClasses='character',
                                    stringsAsFactor=FALSE)
 
 
