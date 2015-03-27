@@ -114,4 +114,11 @@ validateCNPJ <- function(cnpj){
 
 }
 
+scientific10 <- function(x){
+
+    v <- gsub('e', ' %*% 10^', scientific_format()(x))
+    v <- gsub('[+]', '', v)
+    parse(text=v)
+    
+}
 

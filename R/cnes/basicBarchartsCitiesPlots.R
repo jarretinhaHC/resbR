@@ -1,11 +1,5 @@
 ﻿
-### Basic barcharts ###
-
-### Focus on cities 
-
-selected_regions$CO_CIR <- as.character(selected_regions$CO_CIR)
-
-for(cir in unique(selected_regions$CO_CIR)){
+for(cir in selected_cirs){
 
     # Isolate focal health region
     region <- with(selected_regions, selected_regions[which(CO_CIR == cir), ])
@@ -16,10 +10,11 @@ for(cir in unique(selected_regions$CO_CIR)){
     dir.create(focalDir)
 
     #Filter things by region
-    fdata  <- with(data, data[which(CO_MUNICIPIO_GESTOR %in% region$CO_MUNICIPIO)])
+    fdata  <- with(data, data[which(CO_CIR ==  cir)])
 
     # Contracts per city per competence
     tmp <- fdata[, c('NU_COMPETENCIA', 'CO_CPF', 'MUN.NO_MUNICIPIO'), with=F]
+    p <- tmp[, list(P=length(unique(CO_CPF)), by=NU_COMPETENCIA]
 
     counts <- tmp[, {v <- tapply(CO_CPF, MUN.NO_MUNICIPIO, length);
                   list(MUNICÍPIOS=names(v),
@@ -27,19 +22,20 @@ for(cir in unique(selected_regions$CO_CIR)){
                   by=NU_COMPETENCIA]
 
     counts <- counts[, SOMA := sum(VÍNCULOS), by=NU_COMPETENCIA]
-    counts <- counts[, pVÍNCULOS := VÍNCULOS/SOMA * 100]
+    counts <- counts[, pVÍNCULOS := VÍNCULOS / SOMA * 100]
     counts <- counts[, SOMA := NULL]
 
     # Professionals per city per competence
     tmp <- unique(tmp)
+
     tmp <- tmp[, {v <- tapply(CO_CPF, MUN.NO_MUNICIPIO, length);
                list(MUNICÍPIOS=names(v),
                     PROFISSIONAIS=as.vector(v))},
                by=NU_COMPETENCIA]
 
-    tmp <- tmp[, SOMA := sum(PROFISSIONAIS), by=NU_COMPETENCIA]
-    tmp <- tmp[, pPROFISSIONAIS := PROFISSIONAIS/SOMA * 100]
-    tmp <- tmp[, SOMA := NULL]
+    tmp <- split(tmp, tmp$NU_COMPETENCIA)
+    for(c in names(tmp)){tmp[[c]]$pPROFISSIONAIS <- tmp[[c]]$PROFISSIONAIS / p[[c]]$P * 100}
+    tmp <- do.call('rbind', tmp)
 
     counts$PROFISSIONAIS <- tmp$PROFISSIONAIS
     counts$pPROFISSIONAIS <- tmp$pPROFISSIONAIS
@@ -520,7 +516,7 @@ for(cir in unique(selected_regions$CO_CIR)){
     
     #Basic text
     plt <- plt + theme(text=element_text(size=16))
-    plt <- plt + theme(axis.text.x=element_text(size=6,
+    plt <- plt + theme(axis.text.x=element_text(size=8,
                                                  angle=90,
                                                  vjust=0.5,
                                                  hjust=1))

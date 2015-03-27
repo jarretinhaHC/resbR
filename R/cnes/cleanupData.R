@@ -1,7 +1,6 @@
 ﻿
 # Filter, map, rename, clean data 
 
-
 # Selected to be used in filters
 selected_regions <- regions[which(regions$CO_CIR %in% selected$CO_CIR), ]
 

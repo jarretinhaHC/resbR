@@ -54,6 +54,6 @@ to_from_CBO <- read.table(file.path(paste(refDir,'de_para_CBO.csv', sep='/')),
                           as.is=TRUE,
                           quote="")
 
-# raw_data <- bulk_data_loader(files, header)
+raw_data <- bulk_data_loader(files, header)
 
 

@@ -1,5 +1,6 @@
 ﻿
-
+selected_cirs <- as.character(unique(regions$CO_CIR))
+selected_regions <- regions                              
 r <- rep(NA, length(selected_cirs))
 
 df <- data.frame(co_cir=r,
@@ -81,7 +82,7 @@ for(cir in selected_cirs){
    
 }
 
-wb_name <- 'Mobilidade.xls'
+wb_name <- 'MobilidadeBR.xls'
 wb <- loadWorkbook(paste(resultsDir, wb_name, sep='/'), create=TRUE)
 setStyleAction(wb, XLC$'STYLE_ACTION.NONE')
 createSheet(wb, 'Mobilidade')
